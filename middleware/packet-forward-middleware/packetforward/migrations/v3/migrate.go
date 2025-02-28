@@ -31,24 +31,20 @@ func Migrate(
 		expectedTotalEscrowed = expectedTotalEscrowed.Add(bankBalances...)
 	}
 
-	logger.Info(
-		"Calculated expected total escrowed from escrow account bank balances",
-		"num channels", len(transferChannels),
-		"bank total escrowed", expectedTotalEscrowed,
-	)
-
 	// 4. Set the total escrowed for each denom
 	for _, totalEscrowCoin := range expectedTotalEscrowed {
 		prevDenomEscrow := transferKeeper.GetTotalEscrowForDenom(ctx, totalEscrowCoin.Denom)
 
-		transferKeeper.SetTotalEscrowForDenom(ctx, totalEscrowCoin)
+		if !totalEscrowCoin.Equal(prevDenomEscrow) {
+			transferKeeper.SetTotalEscrowForDenom(ctx, totalEscrowCoin)
 
-		logger.Info(
-			"Corrected total escrow for denom to match escrow account bank balances",
-			"denom", totalEscrowCoin.Denom,
-			"previous escrow", prevDenomEscrow,
-			"new escrow", totalEscrowCoin,
-		)
+			logger.Info(
+				"corrected total escrow store to match balance of escrow account",
+				"denom", totalEscrowCoin.Denom,
+				"old_escrow", prevDenomEscrow,
+				"new_escrow", totalEscrowCoin,
+			)
+		}
 	}
 
 	return nil
